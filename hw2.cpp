@@ -1,5 +1,6 @@
 #include <dlfcn.h>
 #include <stdio.h>
+#include <pwd.h>
 #include <sys/types.h>
 #include <iostream>
 #include <fstream>
@@ -96,6 +97,8 @@ static int (*old_fclose)(FILE *stream) = NULL;
 static void (*old_free)(void *ptr) = NULL;
 static char *(*old_setlocale)(int category, const char *locale) = NULL;
 static void *(*old_memmove)(void *dest, const void * src, size_t n) = NULL;
+static int (*old_fileno)(FILE* stream) = NULL;
+
 FILE* out;
 void myinit() {
 	char* output;
@@ -159,7 +162,8 @@ extern "C" uid_t getuid(void) {
 	if(old_getuid !=NULL)
 	{
 		ret_val=old_getuid();
-		fprintf(out, "[monitor] getuid() = %d\n", ret_val);
+		struct passwd *p = getpwuid(ret_val);
+		fprintf(out, "[monitor] getuid() = %s\n", p->pw_name);
 		//cout<<"[monitor] getuid() = "<<old_getuid()<<endl;
 	}
 	else 
@@ -1319,6 +1323,8 @@ extern "C" int execlp(const char *file, const char *arg, ...) {
 		va_end(ap);
 		///
 		fprintf(out, "[monitor] execlp('%s','%s'", file, argv[0]);
+		fflush(out);
+		sleep(10);
 		for(int q=1; q<argc; q++)
 			fprintf(out,", '%s'",argv[q]);
 		fprintf(out, ")\n");
@@ -1594,7 +1600,8 @@ extern "C" uid_t geteuid(void) {
 	if(old_geteuid !=NULL)
 	{
 		ret_val=old_geteuid();
-		fprintf(out, "[monitor] geteuid() = %d\n",ret_val);
+		struct passwd *p = getpwuid(ret_val);
+		fprintf(out, "[monitor] getuid() = %s\n", p->pw_name);
 	}
 	else 
 		fprintf(out,"---[monitor]old_geteuid is NULL");
@@ -2312,4 +2319,26 @@ extern "C" void *memmove(void *dest, const void * src, size_t n) {
 		fprintf(out,"---[monitor]old_memmove is NULL");
 	return ret_val;
 
+}
+extern "C" int fileno(FILE* stream) {
+
+	char* errmsg;
+	if(old_fileno==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fileno) =dlsym(handle, "fileno");
+		}
+	}
+	int ret_val;//return value
+	if(old_fileno !=NULL)
+	{
+		ret_val=old_fileno(stream);
+		fprintf(out, "[monitor] fileno(%p) = %d\n", stream,ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fileno is NULL");
+	return ret_val;
 }
