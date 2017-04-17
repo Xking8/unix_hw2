@@ -11,6 +11,7 @@
 #include <errno.h>
 using namespace std;
 static void myinit() __attribute__((constructor));
+//static void mydes() __attribute__((destructor));
 static uid_t (*old_getuid)(void) = NULL;
 static char *(*old_getenv)(const char*) = NULL; 
 static DIR *(*old_opendir)(const char*) = NULL; 
@@ -81,6 +82,20 @@ static int (*old_unlink)(const char *pathname)  = NULL;
 static int (*old_fchmodat)(int dirfd, const char *pathname, mode_t mode, int flags) = NULL;
 static int (*old_chmod)(const char*, mode_t mode) = NULL;
 static int (*old_fchmod)(int fd, mode_t mode) = NULL;
+static int (*old___xstat)(int ver, const char * path, struct stat *stat_buf) = NULL;
+static int (*old___lxstat)(int ver, const char * path, struct stat *stat_buf) = NULL;
+static int (*old___fxstat)(int ver, int path, struct stat *stat_buf) = NULL;
+static int (*old_mkdir)(const char *pathname, mode_t mode) = NULL;
+static int (*old_mkfifo)(const char *pathname, mode_t mode) = NULL;
+static mode_t (*old_umask)(mode_t mode) = NULL;
+static void *(*old_realloc)(void *ptr, size_t size) = NULL;
+static int (*old_fflush)(FILE *stream) = NULL;
+static int (*old_fputs_unlocked)(const char *s, FILE *stream) = NULL;
+static int (*old___freading)(FILE *stream) = NULL;
+static int (*old_fclose)(FILE *stream) = NULL;
+static void (*old_free)(void *ptr) = NULL;
+static char *(*old_setlocale)(int category, const char *locale) = NULL;
+static void *(*old_memmove)(void *dest, const void * src, size_t n) = NULL;
 FILE* out;
 void myinit() {
 	char* output;
@@ -117,7 +132,10 @@ void myinit() {
 		//cout.rdbuf(outputfile.rdbuf());
 	}
 }
+/*
+void mydes() {
 
+}*/
 
 extern "C" uid_t getuid(void) {
 	char* errmsg;
@@ -1662,11 +1680,11 @@ extern "C" ssize_t pread(int fd, void *buf, size_t count, off_t offset)
 			*(void**)(&old_pread) =dlsym(handle, "pread");
 		}
 	}
-	int ret_val;//return value
+	ssize_t ret_val;//return value
 	if(old_pread !=NULL)
 	{
 		ret_val=old_pread(fd, buf, count, offset);
-		fprintf(out, "[monitor] pread(%d, '%s', %lu, %ld) = %d\n", fd, buf, count, offset, ret_val);
+		fprintf(out, "[monitor] pread(%d, %p, %lu, %ld) = %ld\n", fd, buf, count, offset, ret_val);
 	}
 	else 
 		fprintf(out,"---[monitor]old_pread is NULL");
@@ -1688,7 +1706,7 @@ extern "C" ssize_t pwrite(int fd,const void *buf, size_t count, off_t offset)
 	if(old_pwrite !=NULL)
 	{
 		ret_val=old_pwrite(fd, buf, count, offset);
-		fprintf(out, "[monitor] pwrite(%d, '%s', %lu, %ld) = %d\n", fd, buf, count, offset, ret_val);
+		fprintf(out, "[monitor] pwrite(%d, %p, %lu, %ld) = %d\n", fd, buf, count, offset, ret_val);
 	}
 	else 
 		fprintf(out,"---[monitor]old_pwrite is NULL");
@@ -1710,7 +1728,7 @@ extern "C" ssize_t read(int fd, void *buf, size_t count)
 	if(old_read !=NULL)
 	{
 		ret_val=old_read(fd, buf, count);
-		fprintf(out, "[monitor] read(%d, '%s', %lu) = %d\n", fd, buf, count, ret_val);
+		fprintf(out, "[monitor] read(%d, %p, %lu) = %d\n", fd, buf, count, ret_val);
 	}
 	else 
 		fprintf(out,"---[monitor]old_read is NULL");
@@ -2025,6 +2043,273 @@ extern "C" int fchmod(int fd, mode_t mode) {
 	}
 	else 
 		fprintf(out,"---[monitor]old_fchmod is NULL");
+	return ret_val;
+
+}
+extern "C" int __xstat(int ver, const char * path, struct stat *stat_buf) {
+	
+	char* errmsg;
+	if(old___xstat==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old___xstat) =dlsym(handle, "__xstat");
+		}
+	}
+	int ret_val;//return value
+	if(old___xstat !=NULL)
+	{
+		ret_val=old___xstat(ver,path,stat_buf);
+		fprintf(out, "[monitor] __xstat(%d, '%s', %p) = %d\n", ver, path, stat_buf, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old___xstat is NULL");
+	return ret_val;
+}
+extern "C" int __lxstat(int ver, const char * path, struct stat *stat_buf) {
+	
+	char* errmsg;
+	if(old___lxstat==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old___lxstat) =dlsym(handle, "__lxstat");
+		}
+	}
+	int ret_val;//return value
+	if(old___lxstat !=NULL)
+	{
+		ret_val=old___lxstat(ver,path,stat_buf);
+		fprintf(out, "[monitor] __lxstat(%d, '%s', %p) = %d\n", ver, path, stat_buf, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old___lxstat is NULL");
+	return ret_val;
+}
+extern "C" int __fxstat(int ver, int path, struct stat *stat_buf) {
+	
+	char* errmsg;
+	if(old___fxstat==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old___fxstat) =dlsym(handle, "__fxstat");
+		}
+	}
+	int ret_val;//return value
+	if(old___fxstat !=NULL)
+	{
+		ret_val=old___fxstat(ver,path,stat_buf);
+		fprintf(out, "[monitor] __fxstat(%d, %d, %p) = %d\n", ver, path, stat_buf, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old___fxstat is NULL");
+	return ret_val;
+}
+extern "C" int mkdir(const char *pathname, mode_t mode) {
+	
+	char* errmsg;
+	if(old_mkdir==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_mkdir) =dlsym(handle, "mkdir");
+		}
+	}
+	int ret_val;//return value
+	if(old_mkdir !=NULL)
+	{
+		ret_val=old_mkdir(pathname,mode);
+		fprintf(out, "[monitor] mkdir('%s', %d) = %d\n", pathname, mode, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_mkdir is NULL");
+	return ret_val;
+}
+extern "C" int mkfifo(const char *pathname, mode_t mode) {
+	char* errmsg;
+	if(old_mkfifo==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_mkfifo) =dlsym(handle, "mkfifo");
+		}
+	}
+	int ret_val;//return value
+	if(old_mkfifo !=NULL)
+	{
+		ret_val=old_mkfifo(pathname,mode);
+		fprintf(out, "[monitor] mkfifo('%s', %d) = %d\n", pathname, mode, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_mkfifo is NULL");
+	return ret_val;
+}
+extern "C" mode_t umask(mode_t mode) {
+
+	char* errmsg;
+	if(old_umask==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_umask) =dlsym(handle, "umask");
+		}
+	}
+	mode_t ret_val;//return value
+	if(old_umask !=NULL)
+	{
+		ret_val=old_umask(mode);
+		fprintf(out, "[monitor] umask(%d) = %d\n", mode, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_umask is NULL");
+	return ret_val;
+}
+extern "C" void *realloc(void *ptr, size_t size) {
+
+	char* errmsg;
+	if(old_realloc==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_realloc) =dlsym(handle, "realloc");
+		}
+	}
+	void * ret_val;//return value
+	if(old_realloc !=NULL)
+	{
+		ret_val=old_realloc(ptr,size);
+		fprintf(out, "[monitor] realloc(%p, %ld) = %p\n", ptr, size, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_realloc is NULL");
+	return ret_val;
+}
+extern "C" int fflush(FILE *stream) {
+	char* errmsg;
+	if(old_fflush==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fflush) =dlsym(handle, "fflush");
+		}
+	}
+	int ret_val;//return value
+	if(old_fflush !=NULL)
+	{
+		ret_val=old_fflush(stream);
+		fprintf(out, "[monitor] fflush(%p) = %d\n", stream, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fflush is NULL");
+	return ret_val;
+}
+extern "C" int fputs_unlocked(const char *s, FILE *stream) {
+
+	char* errmsg;
+	if(old_fputs_unlocked==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fputs_unlocked) =dlsym(handle, "fputs_unlocked");
+		}
+	}
+	int ret_val;//return value
+	if(old_fputs_unlocked !=NULL)
+	{
+		ret_val=old_fputs_unlocked(s,stream);
+		fprintf(out, "[monitor] fputs_unlocked(%s, %p) = %d\n", s, stream, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fputs_unlocked is NULL");
+	return ret_val;
+}
+extern "C" int __freading(FILE* stream) {
+
+	char* errmsg;
+	if(old___freading==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old___freading) =dlsym(handle, "__freading");
+		}
+	}
+	int ret_val;//return value
+	if(old___freading !=NULL)
+	{
+		ret_val=old___freading(stream);
+		fprintf(out, "[monitor] __freading(%p) = %d\n", stream, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old___freading is NULL");
+	return ret_val;
+
+}
+/*
+extern "C" void free (void *ptr) {
+	
+	char* errmsg;
+	if(old_free==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_free) =dlsym(handle, "free");
+		}
+	}
+	//int ret_val;//return value
+	if(old_free !=NULL)
+	{
+		fprintf(out, "[monitor] free(%p)\n", ptr);
+		old_free(ptr);
+	}
+	else 
+		fprintf(out,"---[monitor]old_free is NULL");
+	//return NULL;
+
+
+}*/
+extern "C" void *memmove(void *dest, const void * src, size_t n) {
+
+	char* errmsg;
+	if(old_memmove==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_memmove) =dlsym(handle, "memmove");
+		}
+	}
+	void* ret_val;//return value
+	if(old_memmove !=NULL)
+	{
+		ret_val=old_memmove(dest,src,n);
+		fprintf(out, "[monitor] memmove(%p, %p, %ld) = %p\n", dest, src, n,ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_memmove is NULL");
 	return ret_val;
 
 }
