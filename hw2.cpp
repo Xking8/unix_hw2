@@ -77,6 +77,10 @@ static int (*old_setgid)(gid_t gid) = NULL;
 static unsigned int (*old_sleep)(unsigned int seconds) = NULL;
 static int (*old_nanosleep)(const struct timespec *req, const struct timespec *rem) = NULL;
 static int (*old_symlink)(const char *, const char *) = NULL;
+static int (*old_unlink)(const char *pathname)  = NULL;
+static int (*old_fchmodat)(int dirfd, const char *pathname, mode_t mode, int flags) = NULL;
+static int (*old_chmod)(const char*, mode_t mode) = NULL;
+static int (*old_fchmod)(int fd, mode_t mode) = NULL;
 FILE* out;
 void myinit() {
 	char* output;
@@ -1956,4 +1960,71 @@ extern "C" int unlink(const char *pathname) {
 		fprintf(out,"---[monitor]old_unlink is NULL");
 	return ret_val;
 }
+extern "C" int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags) {
 
+	char* errmsg;
+	if(old_fchmodat==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fchmodat) =dlsym(handle, "fchmodat");
+		}
+	}
+	int ret_val;//return value
+	if(old_fchmodat !=NULL)
+	{
+		ret_val=old_fchmodat(dirfd,pathname,mode,flags);
+		fprintf(out, "[monitor] fchmodat(%d, '%s', %d, %d) = %d\n", dirfd, pathname, mode, flags, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fchmodat is NULL");
+	return ret_val;
+}
+extern "C" int chmod(const char *pathname, mode_t mode) {
+
+	char* errmsg;
+	if(old_chmod==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_chmod) =dlsym(handle, "chmod");
+		}
+	}
+	int ret_val;//return value
+	if(old_chmod !=NULL)
+	{
+		ret_val=old_chmod(pathname,mode);
+		fprintf(out, "[monitor] chmod('%s', %d) = %d\n", pathname, mode, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_chmod is NULL");
+	return ret_val;
+
+}
+extern "C" int fchmod(int fd, mode_t mode) {
+
+	char* errmsg;
+	if(old_fchmod==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fchmod) =dlsym(handle, "fchmod");
+		}
+	}
+	int ret_val;//return value
+	if(old_fchmod !=NULL)
+	{
+		ret_val=old_fchmod(fd,mode);
+		fprintf(out, "[monitor] fchmod(%d, %d) = %d\n", fd, mode, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fchmod is NULL");
+	return ret_val;
+
+}
