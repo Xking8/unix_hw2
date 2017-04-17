@@ -68,6 +68,15 @@ static ssize_t (*old_pread)(int fd, void *buf, size_t count, off_t offset) = NUL
 static ssize_t (*old_pwrite)(int fd, const void *buf, size_t count, off_t offset) = NULL;
 static ssize_t (*old_read)(int fd, void *buf, size_t count) = NULL;
 static ssize_t (*old_write)(int fd, const void *buf, size_t count) = NULL;
+static ssize_t (*old_readlink)(const char *path, char *buf, size_t bufsiz) = NULL;
+static int (*old_rmdir)(const char *path) = NULL;
+static int (*old_seteuid)(uid_t euid) = NULL;
+static int (*old_setegid)(gid_t egid) = NULL;
+static int (*old_setuid)(uid_t uid) = NULL;
+static int (*old_setgid)(gid_t gid) = NULL;
+static unsigned int (*old_sleep)(unsigned int seconds) = NULL;
+static int (*old_nanosleep)(const struct timespec *req, const struct timespec *rem) = NULL;
+static int (*old_symlink)(const char *, const char *) = NULL;
 FILE* out;
 void myinit() {
 	char* output;
@@ -1537,7 +1546,7 @@ extern "C" gid_t getegid(void) {
 			*(void**)(&old_getegid) =dlsym(handle, "getegid");
 		}
 	}
-	int ret_val;//return value
+	gid_t ret_val;//return value
 	if(old_getegid !=NULL)
 	{
 		ret_val=old_getegid();
@@ -1559,7 +1568,7 @@ extern "C" uid_t geteuid(void) {
 			*(void**)(&old_geteuid) =dlsym(handle, "geteuid");
 		}
 	}
-	int ret_val;//return value
+	uid_t ret_val;//return value
 	if(old_geteuid !=NULL)
 	{
 		ret_val=old_geteuid();
@@ -1581,7 +1590,7 @@ extern "C" gid_t getgid(void) {
 			*(void**)(&old_getgid) =dlsym(handle, "getgid");
 		}
 	}
-	int ret_val;//return value
+	gid_t ret_val;//return value
 	if(old_getgid !=NULL)
 	{
 		ret_val=old_getgid();
@@ -1723,5 +1732,227 @@ extern "C" ssize_t write(int fd,const void *buf, size_t count)
 	}
 	else 
 		fprintf(out,"---[monitor]old_write is NULL");
+	return ret_val;
+}
+extern "C" ssize_t readlinklink(const char *path, char *buf, size_t bufsiz) {
+
+	char* errmsg;
+	if(old_readlink==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_readlink) =dlsym(handle, "readlink");
+		}
+	}
+	int ret_val;//return value
+	if(old_readlink !=NULL)
+	{
+		ret_val=old_readlink(path, buf, bufsiz);
+		fprintf(out, "[monitor] readlink('%s', '%s', %lu) = %d\n", path, buf, bufsiz, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_readlink is NULL");
+	return ret_val;
+}
+extern int rmdir(const char *path) {
+
+	char* errmsg;
+	if(old_rmdir==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_rmdir) =dlsym(handle, "rmdir");
+		}
+	}
+	int ret_val;//return value
+	if(old_rmdir !=NULL)
+	{
+		ret_val=old_rmdir(path);
+		fprintf(out, "[monitor] rmdir('%s') = %d\n",path, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_rmdir is NULL");
+	return ret_val;
+
+}
+extern "C" int seteuid(uid_t euid) {
+
+	char* errmsg;
+	if(old_seteuid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_seteuid) =dlsym(handle, "seteuid");
+		}
+	}
+	int ret_val;//return value
+	if(old_seteuid !=NULL)
+	{
+		ret_val=old_seteuid(euid);
+		fprintf(out, "[monitor] seteuid(%d) = %d\n",euid, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_seteuid is NULL");
+	return ret_val;
+
+}
+extern "C" int setegid(gid_t egid) {
+
+	char* errmsg;
+	if(old_setegid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_setegid) =dlsym(handle, "setegid");
+		}
+	}
+	int ret_val;//return value
+	if(old_setegid !=NULL)
+	{
+		ret_val=old_setegid(egid);
+		fprintf(out, "[monitor] setegid(%d) = %d\n",egid, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_setegid is NULL");
+	return ret_val;
+
+}
+extern "C" int setuid(uid_t uid) {
+
+	char* errmsg;
+	if(old_setuid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_setuid) =dlsym(handle, "setuid");
+		}
+	}
+	int ret_val;//return value
+	if(old_setuid !=NULL)
+	{
+		ret_val=old_setuid(uid);
+		fprintf(out, "[monitor] setuid(%d) = %d\n",uid, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_setuid is NULL");
+	return ret_val;
+
+}
+extern "C" int setgid(gid_t gid) {
+
+	char* errmsg;
+	if(old_setgid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_setgid) =dlsym(handle, "setgid");
+		}
+	}
+	int ret_val;//return value
+	if(old_setgid !=NULL)
+	{
+		ret_val=old_setgid(gid);
+		fprintf(out, "[monitor] setgid(%d) = %d\n",gid, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_setgid is NULL");
+	return ret_val;
+
+}
+extern "C"  unsigned int sleep(unsigned int seconds) {
+
+	char* errmsg;
+	if(old_sleep==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_sleep) =dlsym(handle, "sleep");
+		}
+	}
+	unsigned int ret_val;//return value
+	if(old_sleep !=NULL)
+	{
+		ret_val=old_sleep(seconds);
+		fprintf(out, "[monitor] sleep(%u) = %u\n",seconds, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_sleep is NULL");
+	return ret_val;
+}
+int nanosleep(const struct timespec *req, const struct timespec *rem) {//?
+	char* errmsg;
+	if(old_nanosleep==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_nanosleep) =dlsym(handle, "nanosleep");
+		}
+	}
+	int ret_val;//return value
+	if(old_nanosleep !=NULL)
+	{
+		ret_val=old_nanosleep(req,rem);
+		fprintf(out, "[monitor] nanosleep(%p, %p) = %u\n", req, rem, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_nanosleep is NULL");
+	return ret_val;
+}
+extern "C" int symlink(const char *dir, const char *pfx) {
+
+	char* errmsg;
+	if(old_symlink==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_symlink) =dlsym(handle, "symlink");
+		}
+	}
+	int ret_val;//return value
+	if(old_symlink !=NULL)
+	{
+		ret_val=old_symlink(dir,pfx);
+		fprintf(out, "[monitor] symlink('%s', '%s') = %d\n", dir, pfx, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_symlink is NULL");
+	return ret_val;
+}
+extern "C" int unlink(const char *pathname) {
+
+	char* errmsg;
+	if(old_unlink==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_unlink) =dlsym(handle, "unlink");
+		}
+	}
+	int ret_val;//return value
+	if(old_unlink !=NULL)
+	{
+		ret_val=old_unlink(pathname);
+		fprintf(out, "[monitor] unlink('%s') = %d\n", pathname, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_unlink is NULL");
 	return ret_val;
 }
