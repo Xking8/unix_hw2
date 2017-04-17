@@ -52,6 +52,22 @@ static int (*old_execl)(const char*, const char*, ...) = NULL;
 static int (*old_execlp)(const char*, const char*, ...) = NULL;
 static int (*old_execle)(const char*, const char*, ...) = NULL;
 static int (*old_execve)(const char*, char *const[], char *const[]) = NULL;
+static int (*old_execvp)(const char *filename, char *const argv[]) = NULL;
+static int (*old_execv)(const char*, char *const[]) = NULL;
+static int (*old_fchown)(int fd, uid_t owner, gid_t group) = NULL;
+static int (*old_fork)(void) = NULL;
+static int (*old_fsync)(int fd) = NULL;
+static int (*old_ftruncate)(int fd, off_t length) = NULL;
+static char* (*old_getcwd)(char *buf, size_t size);
+static gid_t (*old_getegid)(void) = NULL;
+static uid_t (*old_geteuid)(void) = NULL;
+static gid_t (*old_getgid)(void) = NULL;
+static int (*old_link)(const char*, const char*) = NULL;
+static int (*old_pipe)(int pipefd[2]) = NULL;
+static ssize_t (*old_pread)(int fd, void *buf, size_t count, off_t offset) = NULL;
+static ssize_t (*old_pwrite)(int fd, const void *buf, size_t count, off_t offset) = NULL;
+static ssize_t (*old_read)(int fd, void *buf, size_t count) = NULL;
+static ssize_t (*old_write)(int fd, const void *buf, size_t count) = NULL;
 FILE* out;
 void myinit() {
 	char* output;
@@ -1129,40 +1145,8 @@ extern "C" int dup2(int oldfd, int newfd) {
 }
 extern "C" int execl(const char *path, const char *arg, ...) {	
 	
-	int argc;
-	va_list ap;
-	va_start(ap,arg);
-	for(argc=1; va_arg (ap,const char*); argc++)
-	{	
-		;
-	}
-	va_end (ap);
-	int i;
-	char *argv[argc+1];
-	va_start(ap,arg);
-	argv[0]=(char*) arg;
-	for(i=1; i<=argc; i++)
-	{
-		argv[i]=va_arg(ap, char*);
-	}
-	va_end(ap);
-	///
-	fprintf(out, "[monitor] execl('%s','%s'", path, argv[0]);
-	for(int q=1; q<argc; q++)
-		fprintf(out,", '%s'",argv[q]);
-	fprintf(out, ")\n");
-	int ret_val = execve(path,argv,__environ);
-	if (ret_val==-1)
-	{
-		fprintf(out, "[monitor] execl('%s','%s'", path, argv[0]);
-		for(int q=1; q<argc; q++)
-			fprintf(out,", '%s'",argv[q]);
-		fprintf(out, ") = -1\n");
-		return ret_val;
-	}
-	//fprintf(out, "[monitor] execl('%s','%s')\n", path, arg);
-/*	char* errmsg;
-	if(old_execl==NULL) {
+	char* errmsg;
+	if(old_execve==NULL) {
 		void *handle = dlopen("libc.so.6",RTLD_LAZY);
 		errmsg=dlerror();
 		if(handle !=NULL)
@@ -1171,16 +1155,17 @@ extern "C" int execl(const char *path, const char *arg, ...) {
 			*(void**)(&old_execve) =dlsym(handle, "execve");
 		}
 	}
+
+	int argc;
+	va_list ap;
+	va_start(ap,arg);
+	for(argc=1; va_arg (ap,const char*); argc++)
+	{	
+		;
+	}
 	int ret_val;//return value
 	if(old_execve !=NULL)
 	{
-		int argc;
-		va_list ap;
-		va_start(ap,arg);
-		for(argc=1; va_arg (ap,const char*);argc++)
-		{	
-			;
-		}
 		va_end (ap);
 		int i;
 		char *argv[argc+1];
@@ -1192,14 +1177,135 @@ extern "C" int execl(const char *path, const char *arg, ...) {
 		}
 		va_end(ap);
 		///
-		ret_val=execve(path,argv,__environ);
-		//fprintf(out, "[monitor] execl(%d,%d) = %d\n", oldfd, newfd, ret_val);
+		fprintf(out, "[monitor] execl('%s','%s'", path, argv[0]);
+		for(int q=1; q<argc; q++)
+			fprintf(out,", '%s'",argv[q]);
+		fprintf(out, ")\n");
+		int ret_val = old_execve(path,argv,__environ);
+		if (ret_val==-1)
+		{
+			fprintf(out, "[monitor] execl('%s','%s'", path, argv[0]);
+			for(int q=1; q<argc; q++)
+				fprintf(out,", '%s'",argv[q]);
+			fprintf(out, ") = -1\n");
+			return ret_val;
+		}
 	}
 	else 
 		fprintf(out,"---[monitor]old_execve is NULL");
-	return ret_val;*/
+	return ret_val;
+
+
 }
-extern "C" int execve(const char *filename, char *const argv[], char *const envp[]) {
+extern "C" int execle(const char *path, const char *arg, ...) {	
+	
+	char* errmsg;
+	if(old_execve==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_execve) =dlsym(handle, "execve");
+		}
+	}
+
+	int argc;
+	va_list ap;
+	va_start(ap,arg);
+	for(argc=1; va_arg (ap,const char*); argc++)
+	{	
+		;
+	}
+	int ret_val;//return value
+	if(old_execve !=NULL)
+	{
+		va_end (ap);
+		int i;
+		char *argv[argc+1];
+		char **envp;
+		va_start(ap,arg);
+		argv[0]=(char*) arg;
+		for(i=1; i<=argc; i++)
+		{
+			argv[i]=va_arg(ap, char*);
+		}
+		envp=va_arg(ap,char**);
+		va_end(ap);
+		///
+		fprintf(out, "[monitor] execle('%s','%s'", path, argv[0]);
+		for(int q=1; q<argc; q++)
+			fprintf(out,", '%s'",argv[q]);
+		for(int w=0; envp[w]!=NULL;w++)
+			fprintf(out,", '%s'",envp[w]);
+		fprintf(out, ")\n");
+		int ret_val = old_execve(path,argv,envp);
+		if (ret_val==-1)
+		{
+			fprintf(out, "[monitor] execle('%s','%s'", path, argv[0]);
+			for(int q=1; q<argc; q++)
+				fprintf(out,", '%s'",argv[q]);
+			fprintf(out, ") = -1\n");
+			return ret_val;
+		}
+	}
+	else 
+		fprintf(out,"---[monitor]old_execve is NULL");
+	return ret_val;
+}
+extern "C" int execlp(const char *file, const char *arg, ...) {	
+	
+	char* errmsg;
+	if(old_execvp==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_execvp) =dlsym(handle, "execvp");
+		}
+	}
+
+	int argc;
+	va_list ap;
+	va_start(ap,arg);
+	for(argc=1; va_arg (ap,const char*); argc++)
+	{	
+		;
+	}
+	int ret_val;//return value
+	if(old_execvp !=NULL)
+	{
+		va_end (ap);
+		int i;
+		char *argv[argc+1];
+		va_start(ap,arg);
+		argv[0]=(char*) arg;
+		for(i=1; i<=argc; i++)
+		{
+			argv[i]=va_arg(ap, char*);
+		}
+		va_end(ap);
+		///
+		fprintf(out, "[monitor] execlp('%s','%s'", file, argv[0]);
+		for(int q=1; q<argc; q++)
+			fprintf(out,", '%s'",argv[q]);
+		fprintf(out, ")\n");
+		int ret_val = old_execvp(file,argv);
+		if (ret_val==-1)
+		{
+			fprintf(out, "[monitor] execlp('%s','%s'", file, argv[0]);
+			for(int q=1; q<argc; q++)
+				fprintf(out,", '%s'",argv[q]);
+			fprintf(out, ") = -1\n");
+			return ret_val;
+		}
+	}
+	else 
+		fprintf(out,"---[monitor]old_execvp is NULL");
+	return ret_val;
+}
+extern "C" int execve(const char *filename, char *const argv[], char *const envp[]) {//some other exec* call this
 	
 	char* errmsg;
 	if(old_execve==NULL) {
@@ -1234,4 +1340,388 @@ extern "C" int execve(const char *filename, char *const argv[], char *const envp
 	else 
 		fprintf(out,"---[monitor]old_execve is NULL");
 //	return ret_val;
+}
+extern "C" int execvp(const char *filename, char *const argv[]) {//some other exec* call this
+	
+	char* errmsg;
+	if(old_execvp==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_execvp) =dlsym(handle, "execvp");
+		}
+	}
+	int ret_val;//return value
+	if(old_execvp !=NULL)
+	{
+
+		fprintf(out, "[monitor] execvp('%s','%s'", filename, argv[0]);
+		for(int q=1; argv[q]; q++)
+			fprintf(out,", '%s'",argv[q]);
+		fprintf(out, ")\n");
+		ret_val=old_execvp(filename,argv);
+		if(ret_val==-1)
+		{
+			
+			fprintf(out, "[monitor] execvp('%s','%s'", filename, argv[0]);
+			for(int q=1; argv[q]; q++)
+				fprintf(out,", '%s'",argv[q]);
+			fprintf(out, ") = -1\n");
+			return ret_val;
+		}
+
+	}
+	else 
+		fprintf(out,"---[monitor]old_execvp is NULL");
+//	return ret_val;
+}
+extern "C" int execv(const char *path, char *const argv[]) {//some other exec* call this
+	
+	char* errmsg;
+	if(old_execv==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_execv) =dlsym(handle, "execv");
+		}
+	}
+	int ret_val;//return value
+	if(old_execv !=NULL)
+	{
+
+		fprintf(out, "[monitor] execv(path:'%s','%s'", path, argv[0]);
+		for(int q=1; argv[q]; q++)
+			fprintf(out,", '%s'",argv[q]);
+		fprintf(out, ")\n");
+		ret_val=old_execv(path,argv);
+		if(ret_val==-1)
+		{
+			
+			fprintf(out, "[monitor] execv('%s','%s'", path, argv[0]);
+			for(int q=1; argv[q]; q++)
+				fprintf(out,", '%s'",argv[q]);
+			fprintf(out, ") = -1\n");
+			return ret_val;
+		}
+
+	}
+	else 
+		fprintf(out,"---[monitor]old_execv is NULL");
+//	return ret_val;
+}
+//ROW6
+extern "C" int fchown(int fd, uid_t owner, gid_t group) {
+
+	char* errmsg;
+	if(old_fchown==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fchown) =dlsym(handle, "fchown");
+		}
+	}
+	int ret_val;//return value
+	if(old_fchown !=NULL)
+	{
+		ret_val=old_fchown(fd, owner, group);
+		fprintf(out, "[monitor] fchown(%d, %d, %d) = %d\n", fd, owner, group, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fchown is NULL");
+	return ret_val;
+}
+extern "C" int fork(void) {
+	
+	char* errmsg;
+	if(old_fork==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fork) =dlsym(handle, "fork");
+		}
+	}
+	int ret_val;//return value
+	if(old_fork !=NULL)
+	{
+		ret_val=old_fork();
+		if(ret_val>0)
+			fprintf(out, "[monitor] fork() = %d\n", ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fork is NULL");
+	return ret_val;
+
+}
+extern "C" int fsync(int fd) {
+
+	char* errmsg;
+	if(old_fsync==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_fsync) =dlsym(handle, "fsync");
+		}
+	}
+	int ret_val;//return value
+	if(old_fsync !=NULL)
+	{
+		ret_val=old_fsync(fd);
+		fprintf(out, "[monitor] fsynci(%d) = %d\n", fd,ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_fsync is NULL");
+	return ret_val;
+}
+extern "C" int ftruncate(int fd, off_t length) {
+
+	char* errmsg;
+	if(old_ftruncate==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_ftruncate) =dlsym(handle, "ftruncate");
+		}
+	}
+	int ret_val;//return value
+	if(old_ftruncate !=NULL)
+	{
+		ret_val=old_ftruncate(fd,length);
+		fprintf(out, "[monitor] ftruncate(%d, %ld) = %d\n", fd, length, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_ftruncate is NULL");
+	return ret_val;
+}
+extern "C" char *getcwd(char *buf, size_t size) {
+
+	char* errmsg;
+	if(old_getcwd==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_getcwd) =dlsym(handle, "getcwd");
+		}
+	}
+	char *ret_val;//return value
+	if(old_getcwd !=NULL)
+	{
+		ret_val=old_getcwd(buf,size);
+		fprintf(out, "[monitor] getcwd('%s',%lu) = '%s'\n", buf, size, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_getcwd is NULL");
+	return ret_val;
+}
+extern "C" gid_t getegid(void) {
+	char* errmsg;
+	if(old_getegid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_getegid) =dlsym(handle, "getegid");
+		}
+	}
+	int ret_val;//return value
+	if(old_getegid !=NULL)
+	{
+		ret_val=old_getegid();
+		fprintf(out, "[monitor] getegidi() = %d\n",ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_getegid is NULL");
+	return ret_val;
+
+}
+extern "C" uid_t geteuid(void) {
+	char* errmsg;
+	if(old_geteuid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_geteuid) =dlsym(handle, "geteuid");
+		}
+	}
+	int ret_val;//return value
+	if(old_geteuid !=NULL)
+	{
+		ret_val=old_geteuid();
+		fprintf(out, "[monitor] geteuid() = %d\n",ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_geteuid is NULL");
+	return ret_val;
+
+}
+extern "C" gid_t getgid(void) {
+	char* errmsg;
+	if(old_getgid==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			dlerror();
+			*(void**)(&old_getgid) =dlsym(handle, "getgid");
+		}
+	}
+	int ret_val;//return value
+	if(old_getgid !=NULL)
+	{
+		ret_val=old_getgid();
+		fprintf(out, "[monitor] getgid() = %d\n",ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_getgid is NULL");
+	return ret_val;
+
+}
+//ROW7
+extern "C" int link(const char *oldpath, const char *newpath) {
+
+	char* errmsg;
+	if(old_link==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_link) =dlsym(handle, "link");
+		}
+	}
+	int ret_val;//return value
+	if(old_link !=NULL)
+	{
+		ret_val=old_link(oldpath, newpath);
+		fprintf(out, "[monitor] link('%s', '%s') = %d\n", oldpath, newpath, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_link is NULL");
+	return ret_val;
+}
+extern "C" int pipe(int pipefd[2]) {
+	
+	char* errmsg;
+	if(old_pipe==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_pipe) =dlsym(handle, "pipe");
+		}
+	}
+	int ret_val;//return value
+	if(old_pipe !=NULL)
+	{
+		ret_val=old_pipe(pipefd);
+		fprintf(out, "[monitor] pipe(%d, %d) = %d\n", pipefd[0], pipefd[1], ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_pipe is NULL");
+	return ret_val;
+
+
+}
+extern "C" ssize_t pread(int fd, void *buf, size_t count, off_t offset)
+{
+
+	char* errmsg;
+	if(old_pread==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_pread) =dlsym(handle, "pread");
+		}
+	}
+	int ret_val;//return value
+	if(old_pread !=NULL)
+	{
+		ret_val=old_pread(fd, buf, count, offset);
+		fprintf(out, "[monitor] pread(%d, '%s', %lu, %ld) = %d\n", fd, buf, count, offset, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_pread is NULL");
+	return ret_val;
+}
+extern "C" ssize_t pwrite(int fd,const void *buf, size_t count, off_t offset)
+{
+
+	char* errmsg;
+	if(old_pwrite==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_pwrite) =dlsym(handle, "pwrite");
+		}
+	}
+	int ret_val;//return value
+	if(old_pwrite !=NULL)
+	{
+		ret_val=old_pwrite(fd, buf, count, offset);
+		fprintf(out, "[monitor] pwrite(%d, '%s', %lu, %ld) = %d\n", fd, buf, count, offset, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_pwrite is NULL");
+	return ret_val;
+}
+extern "C" ssize_t read(int fd, void *buf, size_t count)
+{
+
+	char* errmsg;
+	if(old_read==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_read) =dlsym(handle, "read");
+		}
+	}
+	int ret_val;//return value
+	if(old_read !=NULL)
+	{
+		ret_val=old_read(fd, buf, count);
+		fprintf(out, "[monitor] read(%d, '%s', %lu) = %d\n", fd, buf, count, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_read is NULL");
+	return ret_val;
+}
+extern "C" ssize_t write(int fd,const void *buf, size_t count)
+{
+
+	char* errmsg;
+	if(old_write==NULL) {
+		void *handle = dlopen("libc.so.6",RTLD_LAZY);
+		errmsg=dlerror();
+		if(handle !=NULL)
+		{
+			*(void**)(&old_write) =dlsym(handle, "write");
+		}
+	}
+	int ret_val;//return value
+	if(old_write !=NULL)
+	{
+		ret_val=old_write(fd, buf, count);
+		fprintf(out, "[monitor] write(%d, '%s', %lu) = %d\n", fd, buf, count, ret_val);
+	}
+	else 
+		fprintf(out,"---[monitor]old_write is NULL");
+	return ret_val;
 }
